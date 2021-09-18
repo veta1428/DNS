@@ -14,7 +14,11 @@
 #include "dns.h"
 #include "Vector.h"
 #include "HashTable.h"
-HashTable* ht;
+
+#define MAX_DNS 10
+#define MAX_SLOTS 10000
+
+HashTable** hashTables = NULL;
 
 typedef struct _DNS_ENTRY
 {
@@ -24,39 +28,40 @@ typedef struct _DNS_ENTRY
 
 DNSHandle InitDNS( )
 {
-    ht = Create(10000);
-    // IMPLEMENT ME =)
-    return (DNSHandle)1;
-		
-    //return (DNSHandle)0;
+    if (hashTables == NULL)
+    {
+        hashTables = malloc(MAX_DNS * sizeof(HashTable*));
+        memset(hashTables, 0, MAX_DNS * sizeof(HashTable*));
+
+        hashTables[0] = Create(MAX_SLOTS);
+        return (DNSHandle)1;
+    }
+    else 
+    {
+        for (size_t i = 0; i < MAX_DNS; i++)
+        {
+            if (hashTables[i] == NULL)
+            {
+                hashTables[i] = Create(MAX_SLOTS);
+                return (DNSHandle) i + 1;
+            }
+        }
+    }
+    return (DNSHandle)0;  
 }
-
-
 
 void LoadHostsFile( DNSHandle hDNS, const char* hostsFilePath )
 {
-    // IMPLEMENT ME =)
-    PDNS_ENTRY pDnsArra;
-    PDNS_ENTRY* pDnsArray = &pDnsArra;
-    int size;
+    HashTable* ht = hashTables[(int)hDNS - 1];
     FILE* fInput = NULL;
-    unsigned int dnCount = 0;
+
     unsigned int i = 0;
 
-    
     fInput = fopen(hostsFilePath, "r");
 
-    dnCount = getNumOfLines(fInput);
-
-    if ((0 == dnCount) || !(*pDnsArray = (PDNS_ENTRY)calloc(dnCount, sizeof(DNS_ENTRY))))
-    {
-        fclose(fInput);     
-    }
-
-    size = dnCount;
     fseek(fInput, 0, SEEK_SET);
 
-    for (i = 0; i < dnCount && !feof(fInput); i++)
+    for (i = 0; !feof(fInput); i++)
     {
         char buffer[201] = { 0 };
         char* pStringWalker = &buffer[0];
@@ -64,41 +69,37 @@ void LoadHostsFile( DNSHandle hDNS, const char* hostsFilePath )
         unsigned int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
 
         fgets(buffer, 200, fInput);
-        if (5 != fscanf_s(fInput, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, buffer, 200))
-            continue;
+        fscanf_s(fInput, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, buffer, 200);
+          
         Item item;
-        (*pDnsArray)[i].ip = (ip1 & 0xFF) << 24 |
+        item.value = (ip1 & 0xFF) << 24 |
             (ip2 & 0xFF) << 16 |
             (ip3 & 0xFF) << 8 |
             (ip4 & 0xFF);
 
-        item.value = (*pDnsArray)[i].ip;
         uHostNameLength = strlen(buffer);
   
         if (uHostNameLength)
         {
-            (*pDnsArray)[i].domainName = (char*)malloc(uHostNameLength + 1);
-            item.key = (*pDnsArray)[i].domainName;
-            strcpy((*pDnsArray)[i].domainName, pStringWalker);
+            item.key = (char*)malloc(uHostNameLength + 1);
+            strcpy(item.key, pStringWalker);
         }
         Add(ht, item.key, item.value);
     }
 
     fclose(fInput);
-   // return TRUE;
 }
-
-
 
 IPADDRESS DnsLookUp( DNSHandle hDNS, const char* hostName )
 {
+    HashTable* ht = hashTables[(int)hDNS - 1];
     return Get(ht, hostName);
-
-    return INVALID_IP_ADDRESS;
 }
 
 void ShutdownDNS( DNSHandle hDNS )
 {
+    HashTable* ht = hashTables[(int)hDNS - 1];
     EraseHT(ht);
-    // IMPLEMENT ME =)
+
+    hashTables[(int)hDNS - 1] = NULL;
 }
