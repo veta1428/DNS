@@ -55,23 +55,22 @@ void LoadHostsFile( DNSHandle hDNS, const char* hostsFilePath )
     HashTable* ht = hashTables[(int)hDNS - 1];
     FILE* fInput = NULL;
 
-    unsigned int i = 0;
-
     fInput = fopen(hostsFilePath, "r");
 
     fseek(fInput, 0, SEEK_SET);
 
-    for (i = 0; !feof(fInput); i++)
-    {
-        char buffer[201] = { 0 };
-        char* pStringWalker = &buffer[0];
-        unsigned int uHostNameLength = 0;
-        unsigned int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
+    char buffer[201];
 
-        fgets(buffer, 200, fInput);
+    unsigned int uHostNameLength = 0;
+    unsigned int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
+    char* pStringWalker = &buffer[0];
+
+    Item item;
+
+    for (unsigned int i = 0; !feof(fInput); i++)
+    {
         fscanf_s(fInput, "%d.%d.%d.%d %s", &ip1, &ip2, &ip3, &ip4, buffer, 200);
           
-        Item item;
         item.value = (ip1 & 0xFF) << 24 |
             (ip2 & 0xFF) << 16 |
             (ip3 & 0xFF) << 8 |
@@ -84,6 +83,7 @@ void LoadHostsFile( DNSHandle hDNS, const char* hostsFilePath )
             item.key = (char*)malloc(uHostNameLength + 1);
             strcpy(item.key, pStringWalker);
         }
+
         Add(ht, item.key, item.value);
     }
 
