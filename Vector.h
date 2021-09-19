@@ -22,6 +22,5 @@ Vector* CreateV();
 void PushBack(Vector*, Item);
 Item* GetValue(Vector* vector, int index);
 void EraseV(Vector*);
-bool RemoveV(Vector*, Item);
 
 #endif

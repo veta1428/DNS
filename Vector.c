@@ -3,16 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-const int INCREASE = 3;
+const int INCREASE = 2;
+const int INIT_CAPACITY = 2;
 
 Vector* CreateV()
 {
 	Vector* vec = malloc(sizeof(Vector));
-	vec->capacity = 2;
+	vec->capacity = INIT_CAPACITY;
 	vec->array = malloc(vec->capacity * sizeof(Item));
 	vec->size = 0;
 	return vec;
 }
+
 void Resize(Vector* vector)
 {
 	vector->capacity *= INCREASE;
@@ -27,6 +29,7 @@ void Resize(Vector* vector)
 	free(vector->array);
 	vector->array = new_arr;
 }
+
 void PushBack(Vector* vector , Item item)
 {
 	if (vector->size == vector->capacity)
@@ -37,11 +40,11 @@ void PushBack(Vector* vector , Item item)
 	vector->size++;
 }
 
-
 Item* GetValue(Vector* vector, int index)
 {
 	return &vector->array[index];
 }
+
 void EraseV(Vector* vector)
 {
 	for (size_t i = 0; i < vector->size; i++)
@@ -52,18 +55,4 @@ void EraseV(Vector* vector)
 	free(vector);
 
 	vector = NULL;
-}
-
-bool RemoveV(Vector* vector, Item item)
-{
-	int index;
-	for (size_t i = 0; i < vector->size; i++)
-	{
-		if ((vector->array[i].key == item.key) && (vector->array[i].value == item.value))
-		{
-			index = i;
-			break;
-		}
-	}
-	
 }
